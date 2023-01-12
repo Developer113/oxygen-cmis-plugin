@@ -83,8 +83,8 @@ ListOldVersionsAction.prototype.handleOperationResult_ = function(container, sup
   document.activeElement.blur();
   goog.dom.removeNode(container.querySelector("#cmis-loader"));
 
-  var versions = JSON.parse(data);
-  goog.dom.append(container, this.createTable_(versions, supportsCommitMessage));
+  var allVersionsDescriptors = JSON.parse(data);
+  goog.dom.append(container, this.createTable_(allVersionsDescriptors, supportsCommitMessage));
 
     // In case of older version, scroll it into view.
   var oldVersionSelected = document.querySelector('.current-version');
@@ -96,13 +96,12 @@ ListOldVersionsAction.prototype.handleOperationResult_ = function(container, sup
 /**
  * Creates the versions table.
  *
- * @param versions the versions list.
+ * @param {[{author: string, commitMessage:string, url: string, version:string}]} reviewDetails 
  * @param supportsCommitMessage whether the server supports commit messages.
- *
  * @return {*} the HTML table.
  * @private
  */
-ListOldVersionsAction.prototype.createTable_ = function(versions, supportsCommitMessage) {
+ListOldVersionsAction.prototype.createTable_ = function(allVersionsDescriptors, supportsCommitMessage) {
   var table = goog.dom.createDom('table', 'cmis-history-table');
   var isLatestVersionOpenedNow = location.href.indexOf('oldversion') === -1;
 
@@ -115,25 +114,26 @@ ListOldVersionsAction.prototype.createTable_ = function(versions, supportsCommit
   }
   table.appendChild(goog.dom.createDom('thead', null, headerRow));
 
-  for(let version of versions) {
-    if (version.version === 'filename') {
+  
+  for(let versionDescriptor of allVersionsDescriptors) {
+    if (versionDescriptor.version === 'filename') {
       continue;
     }
-    var versionUrl = version.url;
+    var versionUrl = versionDescriptor.url;
 
     var isThisVersionOpenedNow = window.location.search.indexOf(versionUrl) !== -1;
     var isThisVersionOld = versionUrl.indexOf('oldversion') !== -1;
     var isThisCurrentVersion = (isThisVersionOpenedNow && isThisVersionOld) || (isLatestVersionOpenedNow && !isThisVersionOld);
-
+    
     var href = window.location.origin + window.location.pathname + versionUrl;
     var versionLink = goog.dom.createDom('a', {
         className: 'cmis-old-version-link',
         href: isThisCurrentVersion ? '#' : href,
         target: '_blank'
-      }, version.version);
+      }, versionDescriptor.version);
 
     var versionTd = goog.dom.createDom('td', 'cmis-version', versionLink);
-    var userTd = goog.dom.createDom('td', {class: 'cmis-user', title: version.author}, version.author);
+    var userTd = goog.dom.createDom('td', {class: 'cmis-user', title: versionDescriptor.author}, versionDescriptor.author);
 
     var tr = goog.dom.createDom('tr', {
           className: isThisCurrentVersion ? 'current-version' : '',
@@ -141,9 +141,9 @@ ListOldVersionsAction.prototype.createTable_ = function(versions, supportsCommit
         },
         versionTd, userTd)
     if (supportsCommitMessage) {
-      var processedCommitMessage = version.commitMessage.replace("/\n", "&#10;");
+      var processedCommitMessage = versionDescriptor.commitMessage.replace("/\n", "&#10;");
       var checkinMessageTd = goog.dom.createDom('td', 'cmis-checkin-message',
-          goog.dom.createDom('span', {title: processedCommitMessage}, version.commitMessage));
+          goog.dom.createDom('span', {title: processedCommitMessage}, versionDescriptor.commitMessage));
       tr.appendChild(checkinMessageTd);
     }
 
