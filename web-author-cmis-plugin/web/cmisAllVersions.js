@@ -96,7 +96,7 @@ ListOldVersionsAction.prototype.handleOperationResult_ = function(container, sup
 /**
  * Creates the versions table.
  *
- * @param {[{author: string, commitMessage:string, url: string, version:string}]} reviewDetails 
+ * @param {[{author: string, commitMessage:string, url: string, version:string}]} allVersionsDescriptors 
  * @param supportsCommitMessage whether the server supports commit messages.
  * @return {*} the HTML table.
  * @private
