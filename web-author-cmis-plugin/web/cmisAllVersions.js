@@ -49,7 +49,7 @@ ListOldVersionsAction.prototype.getDialog_ = function(supportsCommitMessage) {
   if(!allVerDialog) {
     allVerDialog = workspace.createDialog();
     allVerDialog.setTitle(tr(msgs.VERSION_HISTORY));
-    allVerDialog.setButtonConfiguration([{key: 'close', caption: tr(msgs.CLOSE_)}]);
+    allVerDialog.setButtonConfiguration([{key: 'close', caption: tr(msgs.CLOSE_)}, {key: 'diff', caption: 'Diff'}]);
     this.dialog_ = allVerDialog;
   } else {
     // Clear the dialog element to render the new versions table.
@@ -106,7 +106,9 @@ ListOldVersionsAction.prototype.createTable_ = function(allVersionsDescriptors, 
   var isLatestVersionOpenedNow = location.href.indexOf('oldversion') === -1;
 
   let headerRow = goog.dom.createDom('tr', 'table-header-row',
-      [goog.dom.createDom('th', null, "Version"),
+      [goog.dom.createDom('th', null, ''),
+      goog.dom.createDom('th', null, ''),
+      goog.dom.createDom('th', null, "Version"),
       goog.dom.createDom('th', null, "Creator")]);
   if(supportsCommitMessage) {
     let headerCommitMessage = goog.dom.createDom('th', null, 'Check-in Message');
@@ -114,8 +116,9 @@ ListOldVersionsAction.prototype.createTable_ = function(allVersionsDescriptors, 
   }
   table.appendChild(goog.dom.createDom('thead', null, headerRow));
 
-  
-  for(let versionDescriptor of allVersionsDescriptors) {
+  for(let i = 0; i < allVersionsDescriptors.length; i++) {
+    let versionDescriptor = allVersionsDescriptors[i];
+    var previousVersion = i === 0 ? null : allVersionsDescriptors[i - 1];
     if (versionDescriptor.version === 'filename') {
       continue;
     }
@@ -124,7 +127,8 @@ ListOldVersionsAction.prototype.createTable_ = function(allVersionsDescriptors, 
     var isThisVersionOpenedNow = window.location.search.indexOf(versionUrl) !== -1;
     var isThisVersionOld = versionUrl.indexOf('oldversion') !== -1;
     var isThisCurrentVersion = (isThisVersionOpenedNow && isThisVersionOld) || (isLatestVersionOpenedNow && !isThisVersionOld);
-    
+    versionDescriptor.isCurrentVersion = isThisCurrentVersion;
+
     var href = window.location.origin + window.location.pathname + versionUrl;
     var versionLink = goog.dom.createDom('a', {
         className: 'cmis-old-version-link',
@@ -134,12 +138,17 @@ ListOldVersionsAction.prototype.createTable_ = function(allVersionsDescriptors, 
 
     var versionTd = goog.dom.createDom('td', 'cmis-version', versionLink);
     var userTd = goog.dom.createDom('td', {class: 'cmis-user', title: versionDescriptor.author}, versionDescriptor.author);
+    
+    var diffBtnTdLeft = goog.dom.createDom('td', 'cmis-diff-left',
+      goog.dom.createDom('input', {type: "radio", name: "left-diff-column", defaultChecked: isThisCurrentVersion}));
+    var diffBtnTdRight = goog.dom.createDom('td', 'cmis-diff-right',
+      goog.dom.createDom('input', {type: "radio", name: "right-diff-column", defaultChecked: previousVersion?.isCurrentVersion}));
 
     var tr = goog.dom.createDom('tr', {
           className: isThisCurrentVersion ? 'current-version' : '',
           title: isThisCurrentVersion ? 'Opened document version' : ''
         },
-        versionTd, userTd)
+        diffBtnTdLeft, diffBtnTdRight, versionTd, userTd)
     if (supportsCommitMessage) {
       var processedCommitMessage = versionDescriptor.commitMessage.replace("/\n", "&#10;");
       var checkinMessageTd = goog.dom.createDom('td', 'cmis-checkin-message',
